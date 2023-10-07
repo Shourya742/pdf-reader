@@ -1,3 +1,4 @@
+"use client";
 const PdfRenderer = () => {
   return <div>PdfRenderer</div>;
 };

@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import Providers from "@/components/Provider";
 import "react-loading-skeleton/dist/skeleton.css";
+import "react-loading-skeleton/dist/skeleton.css";
 import { Toast } from "@/components/ui/toast";
 
 const inter = Inter({ subsets: ["latin"] });
