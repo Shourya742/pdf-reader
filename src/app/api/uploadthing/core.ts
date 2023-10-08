@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-
+import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 const f = createUploadthing();
 
 export const ourFileRouter = {
@@ -22,6 +22,9 @@ export const ourFileRouter = {
           uploadStatus: "PROCESSING",
         },
       });
+
+      try {
+      } catch (error) {}
     }),
 } satisfies FileRouter;
 
