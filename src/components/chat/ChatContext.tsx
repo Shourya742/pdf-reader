@@ -1,6 +1,7 @@
-import { ReactNode, createContext, useState } from "react";
+import { ReactNode, createContext, useRef, useState } from "react";
 import { useToast } from "../ui/use-toast";
 import { useMutation } from "@tanstack/react-query";
+import { utils } from "@pinecone-database/pinecone";
 
 type streamResponse = {
   addMessage: () => void;
@@ -25,6 +26,7 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
   const [message, setMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
+  const backupMessage = useRef("");
   const { mutate: sendMessage } = useMutation({
     mutationFn: async ({ message }: { message: string }) => {
       const response = await fetch("/api/message", {
@@ -38,6 +40,10 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
         throw new Error("Failed to send message");
       }
       return response.body;
+    },
+    onMutate: async () => {
+      backupMessage.current = message;
+      setMessage("");
     },
   });
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
