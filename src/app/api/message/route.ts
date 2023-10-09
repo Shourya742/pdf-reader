@@ -1,27 +1,37 @@
 import { db } from "@/db";
+import { openai } from "@/lib/openai";
 import { getPineconeClient } from "@/lib/pinecone";
 import { SendMessageValidator } from "@/lib/validators/SendMessageValidator";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { PineconeStore } from "langchain/vectorstores/pinecone";
 import { NextRequest } from "next/server";
+
 import { OpenAIStream, StreamingTextResponse } from "ai";
-import { openai } from "@/lib/openai";
 
 export const POST = async (req: NextRequest) => {
+  // endpoint for asking a question to a pdf file
+
   const body = await req.json();
+
   const { getUser } = getKindeServerSession();
   const user = getUser();
+
   const { id: userId } = user;
+
   if (!userId) return new Response("Unauthorized", { status: 401 });
+
   const { fileId, message } = SendMessageValidator.parse(body);
+
   const file = await db.file.findFirst({
     where: {
       id: fileId,
       userId,
     },
   });
-  if (!file) return new Response("Not Found", { status: 401 });
+
+  if (!file) return new Response("Not found", { status: 404 });
+
   await db.message.create({
     data: {
       text: message,
@@ -31,19 +41,22 @@ export const POST = async (req: NextRequest) => {
     },
   });
 
+  // 1: vectorize message
   const embeddings = new OpenAIEmbeddings({
     openAIApiKey: process.env.OPENAI_API_KEY,
   });
+
   const pinecone = await getPineconeClient();
   const pineconeIndex = pinecone.Index("pdfreader");
 
   const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
-    //@ts-ignore
     pineconeIndex,
     namespace: file.id,
   });
+
   const results = await vectorStore.similaritySearch(message, 4);
-  const formattedPrevMessages = await db.message.findMany({
+
+  const prevMessages = await db.message.findMany({
     where: {
       fileId,
     },
@@ -52,6 +65,12 @@ export const POST = async (req: NextRequest) => {
     },
     take: 6,
   });
+
+  const formattedPrevMessages = prevMessages.map((msg) => ({
+    role: msg.isUserMessage ? ("user" as const) : ("assistant" as const),
+    content: msg.text,
+  }));
+
   const response = await openai.chat.completions.create({
     model: "gpt-3.5-turbo",
     temperature: 0,

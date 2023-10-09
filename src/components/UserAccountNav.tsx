@@ -1,4 +1,4 @@
-// import { getUserSubscriptionPlan } from "@/lib/stripe";
+import { getUserSubscriptionPlan } from "@/lib/stripe";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +25,7 @@ const UserAccountNav = async ({
   imageUrl,
   name,
 }: UserAccountNavProps) => {
-  const subscriptionPlan = { isSubscribed: false };
+  const subscriptionPlan = await getUserSubscriptionPlan();
 
   return (
     <DropdownMenu>
